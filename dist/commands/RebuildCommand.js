@@ -1,0 +1,2 @@
+import{existsSync as o,readdirSync as r,writeFileSync as e}from"node:fs";import{fatal as t}from"@triforce-heroes/triforce-core/Console";import{normalize as f}from"@triforce-heroes/triforce-core/Path";import{processEntries as i}from"../Rebuilder.js";export function RebuildCommand(c,n,s){o(c)||t(`Directory not found: ${n}`),process.stdout.write(`Rebuilding ${f(n)} to ${n} and ${s}... `);let d=Date.now(),{indexes:m,datas:u}=i(c,r(c));e(s,Buffer.concat(m)),e(n,Buffer.concat([Buffer.alloc(16),...u])),process.stdout.write(`OK (${((Date.now()-d)/1e3).toFixed(2)}s)
+`)}

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fatal } from "@triforce-heroes/triforce-core/Console";
 import { normalize } from "@triforce-heroes/triforce-core/Path";
 
-import { getEntries, processEntry } from "../Reader.js";
+import { getEntries } from "../Reader.js";
 
 export function ExtractCommand(
   linkData: string,
@@ -31,13 +31,11 @@ export function ExtractCommand(
 
   const now = Date.now();
 
-  const data = readFileSync(linkData);
-  const entries = getEntries(Buffer.from(readFileSync(linkInfo)));
-
-  for (const entry of entries) {
-    for (const dataEntry of processEntry(data, entry)) {
-      writeFileSync(join(outputPath, dataEntry.name), dataEntry.data);
-    }
+  for (const entry of getEntries(
+    readFileSync(linkData),
+    readFileSync(linkInfo),
+  )) {
+    writeFileSync(join(outputPath, entry.name), entry.data);
   }
 
   process.stdout.write(`OK (${((Date.now() - now) / 1000).toFixed(2)}s)\n`);

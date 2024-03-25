@@ -2,80 +2,61 @@ import { unzipSync } from "node:zlib";
 
 import { BufferConsumer } from "@triforce-heroes/triforce-core/BufferConsumer";
 
-import { LinkDataEntry } from "./types/LinkDataEntry.js";
-import { LinkInfoEntry } from "./types/LinkInfoEntry.js";
+import { Entry } from "./types/Entry.js";
 
-export function getEntries(info: Buffer) {
-  const entries = new Array<LinkInfoEntry>();
-  const consumer = new BufferConsumer(info);
+export function getEntries(data: Buffer, info: Buffer) {
+  const entries: Entry[] = [];
 
-  while (!consumer.isConsumed()) {
-    entries.push({
-      index: entries.length,
-      offset: consumer.readUnsignedInt32(),
-      sizeCompressed: consumer.skip(4).readUnsignedInt32(),
-      size: consumer.skip(4).readUnsignedInt32(),
-      isCompressed: consumer.skip(4).readUnsignedInt32() === 1,
-      group: consumer.skip(4).read(4),
-      groupSub: consumer.read(4),
-    });
-  }
+  const infoConsumer = new BufferConsumer(info);
 
-  return entries;
-}
+  while (!infoConsumer.isConsumed()) {
+    const infoOffset = infoConsumer.readUnsignedInt32();
+    const infoSizeBlock = infoConsumer.skip(12).readUnsignedInt32();
+    const infoCompressed = infoConsumer.skip(4).readUnsignedInt32() === 1;
+    const infoHashDirectory = infoConsumer.skip(4).read(4).toString("hex");
+    const infoHashFile = infoConsumer.read(4).toString("hex");
 
-export function processEntry(
-  data: Buffer,
-  info: LinkInfoEntry,
-): LinkDataEntry[] {
-  const infoData = data.subarray(info.offset, info.offset + info.size);
-  const infoPath = [
-    String(info.index).padStart(4, "0"),
-    info.group.toString("hex").toUpperCase().padStart(8, "0"),
-    info.groupSub.toString("hex").toUpperCase().padStart(8, "0"),
-  ].join("_");
+    const infoName = `${[
+      String(entries.length).padStart(4, "0"),
+      infoHashDirectory.toUpperCase().padStart(8, "0"),
+      infoHashFile.toUpperCase().padStart(8, "0"),
+    ].join("_")}.koei`;
 
-  if (!info.isCompressed) {
-    return [
-      {
-        index: info.index,
-        name: `${infoPath}.koei`,
-        data: infoData,
-      },
-    ];
-  }
+    const infoData = data.subarray(infoOffset, infoOffset + infoSizeBlock);
 
-  const consumer = new BufferConsumer(infoData);
+    if (!infoCompressed) {
+      entries.push({ name: infoName, data: infoData });
 
-  const consumerUnknown = consumer.skip(2).readUnsignedInt16();
-  const consumerEntries = consumer.readUnsignedInt32();
+      continue;
+    }
 
-  consumer.skip(4); // Size (total).
+    const dataConsumer = new BufferConsumer(infoData);
+    const dataEntries = dataConsumer.skip(4).readUnsignedInt32();
 
-  const consumerSizes: number[] = [];
+    dataConsumer.skip(4);
 
-  for (let i = 0; i < consumerEntries; i++) {
-    consumerSizes.push(consumer.readUnsignedInt32());
-  }
+    const consumerSizes: number[] = [];
 
-  consumer.skipPadding(128);
+    for (let i = 0; i < dataEntries; i++) {
+      consumerSizes.push(dataConsumer.readUnsignedInt32());
+    }
 
-  const entries: LinkDataEntry[] = [];
+    dataConsumer.skipPadding(128);
 
-  for (let i = 0; i < consumerEntries; i++) {
-    const entryName = `${infoPath}_${String(consumerUnknown).padStart(2, "0")}_${String(i).padStart(4, "0")}`;
-    const entryData = consumer.read(consumerSizes[i]);
-    const entryCompressed = entryData.at(4) === 0x78;
+    const dataBuffers: Buffer[] = [];
 
-    entries.push({
-      index: info.index,
-      indexSub: i,
-      raw: !entryCompressed,
-      name: `${entryName + (entryCompressed ? "" : "_raw")}.koei`,
-      data: entryCompressed ? unzipSync(entryData.subarray(4)) : entryData,
-    });
+    for (let i = 0; i < dataEntries; i++) {
+      const entryData = dataConsumer.read(consumerSizes[i]);
+      const entryCompressed = entryData.at(4) === 0x78;
 
-    consumer.skipPadding(128);
+      dataBuffers.push(
+        entryCompressed ? unzipSync(entryData.subarray(4)) : entryData,
+      );
+
+      dataConsumer.skipPadding(128);
+    }
+
+    entries.push({ name: infoName, data: Buffer.concat(dataBuffers) });
   }
 
   return entries;

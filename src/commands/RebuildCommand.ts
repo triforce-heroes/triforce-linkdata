@@ -20,10 +20,10 @@ export function RebuildCommand(
 
   const now = Date.now();
 
-  const { indexes, datas } = processEntries(path, readdirSync(path));
+  const { indexes, blocks } = processEntries(path, readdirSync(path));
 
-  writeFileSync(linkInfo, Buffer.concat(indexes));
-  writeFileSync(linkData, Buffer.concat([Buffer.alloc(16), ...datas]));
+  writeFileSync(linkInfo, indexes);
+  writeFileSync(linkData, blocks);
 
   process.stdout.write(`OK (${((Date.now() - now) / 1000).toFixed(2)}s)\n`);
 }

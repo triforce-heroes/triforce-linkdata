@@ -1,6 +1,5 @@
-import { unzipSync } from "node:zlib";
-
 import { BufferConsumer } from "@triforce-heroes/triforce-core/BufferConsumer";
+import { inflate } from "pako";
 
 import { Entry } from "./types/Entry.js";
 
@@ -16,16 +15,22 @@ export function getEntries(data: Buffer, info: Buffer) {
     const infoHashDirectory = infoConsumer.skip(4).read(4).toString("hex");
     const infoHashFile = infoConsumer.read(4).toString("hex");
 
-    const infoName = `${[
-      String(entries.length).padStart(4, "0"),
-      infoHashDirectory.toUpperCase().padStart(8, "0"),
-      infoHashFile.toUpperCase().padStart(8, "0"),
-    ].join("_")}.koei`;
+    const infoIndex = String(entries.length).padStart(4, "0");
+    const infoHash = infoHashDirectory.toUpperCase().padStart(8, "0");
+    const infoHashSub = infoHashFile.toUpperCase().padStart(8, "0");
+
+    const infoName = `${[infoIndex, infoHash, infoHashSub].join("_")}.koei`;
 
     const infoData = data.subarray(infoOffset, infoOffset + infoSizeBlock);
 
     if (!infoCompressed) {
-      entries.push({ name: infoName, data: infoData });
+      entries.push({
+        index: infoIndex,
+        name: infoName,
+        hash: infoHash,
+        hashSub: infoHashSub,
+        data: infoData,
+      });
 
       continue;
     }
@@ -49,14 +54,24 @@ export function getEntries(data: Buffer, info: Buffer) {
       const entryData = dataConsumer.read(consumerSizes[i]);
       const entryCompressed = entryData.at(4) === 0x78;
 
-      dataBuffers.push(
-        entryCompressed ? unzipSync(entryData.subarray(4)) : entryData,
-      );
+      if (entryCompressed) {
+        dataBuffers.push(
+          Buffer.from(inflate(Uint8Array.from(entryData.subarray(4)))),
+        );
+      } else {
+        dataBuffers.push(entryData);
+      }
 
       dataConsumer.skipPadding(128);
     }
 
-    entries.push({ name: infoName, data: Buffer.concat(dataBuffers) });
+    entries.push({
+      index: infoIndex,
+      name: infoName,
+      hash: infoHash,
+      hashSub: infoHashSub,
+      data: Buffer.concat(dataBuffers),
+    });
   }
 
   return entries;

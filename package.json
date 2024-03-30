@@ -9,6 +9,10 @@
   "bin": {
     "triforce-linkdata": "dist/command.js"
   },
+  "exports": {
+    "./Rebuilder": "./dist/Rebuilder.js",
+    "./Extractor": "./dist/Extractor.js"
+  },
   "scripts": {
     "build": "rimraf ./dist && tsc -p ./tsconfig.build.json && swc ./dist -d .",
     "linkdata": "node ./dist/command.js",
@@ -23,7 +27,7 @@
     "@swc/cli": "^0.3.10",
     "@swc/core": "^1.4.11",
     "@triforce-heroes/triforce-core": "github:triforce-heroes/triforce-core",
-    "@types/node": "^20.11.30",
+    "@types/node": "^20.12.2",
     "@types/pako": "^2.0.3",
     "commander": "^12.0.0",
     "pako": "^2.1.0",

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fatal } from "@triforce-heroes/triforce-core/Console";
 import { normalize } from "@triforce-heroes/triforce-core/Path";
 
-import { getEntries } from "../Reader.js";
+import { extract } from "../Extractor.js";
 
 export function ExtractCommand(
   linkData: string,
@@ -31,10 +31,7 @@ export function ExtractCommand(
 
   const now = Date.now();
 
-  for (const entry of getEntries(
-    readFileSync(linkData),
-    readFileSync(linkInfo),
-  )) {
+  for (const entry of extract(readFileSync(linkData), readFileSync(linkInfo))) {
     writeFileSync(join(outputPath, entry.name), entry.data);
   }
 

@@ -1,17 +1,12 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { BufferBuilder } from "@triforce-heroes/triforce-core/BufferBuilder";
 
-export function processEntries(path: string, files: string[]) {
+export function rebuild(files: Record<string, Buffer>) {
   const indexes = new BufferBuilder();
   const blocks = new BufferBuilder();
 
   blocks.write(16);
 
-  for (const file of files) {
-    const fileBuffer = readFileSync(join(path, file));
-
+  for (const [file, fileBuffer] of Object.entries(files)) {
     const [, entryGroup, entryGroupSub] = file.slice(0, -5).split("_") as [
       never,
       string,

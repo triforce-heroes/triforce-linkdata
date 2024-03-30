@@ -1,9 +1,10 @@
-import { existsSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { fatal } from "@triforce-heroes/triforce-core/Console";
 import { normalize } from "@triforce-heroes/triforce-core/Path";
 
-import { processEntries } from "../Rebuilder.js";
+import { rebuild } from "../Rebuilder.js";
 
 export function RebuildCommand(
   path: string,
@@ -20,7 +21,11 @@ export function RebuildCommand(
 
   const now = Date.now();
 
-  const { indexes, blocks } = processEntries(path, readdirSync(path));
+  const { indexes, blocks } = rebuild(
+    Object.fromEntries(
+      readdirSync(path).map((file) => [file, readFileSync(join(path, file))]),
+    ),
+  );
 
   writeFileSync(linkInfo, indexes);
   writeFileSync(linkData, blocks);

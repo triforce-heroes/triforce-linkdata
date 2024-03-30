@@ -3,7 +3,7 @@ import { inflate } from "pako";
 
 import { Entry } from "./types/Entry.js";
 
-export function getEntries(data: Buffer, info: Buffer) {
+export function extract(data: Buffer, info: Buffer) {
   const entries: Entry[] = [];
 
   const infoConsumer = new BufferConsumer(info);

@@ -1,5 +1,8 @@
 /// <reference types="node" resolution-mode="require"/>
-export declare function rebuild(files: Record<string, Buffer>): {
+import { DeflateFunctionOptions } from "pako";
+type CompressionLevel = DeflateFunctionOptions["level"];
+export declare function rebuild(files: Record<string, Buffer>, level?: CompressionLevel): {
     indexes: Buffer;
     blocks: Buffer;
 };
+export {};

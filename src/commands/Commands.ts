@@ -10,8 +10,8 @@ export function makeProgram() {
     .command("rebuild")
     .description("rebuild a LinkData/LinkInfo from compatible directory")
     .argument("<path>", "Compatible directory")
-    .argument("<LinkData>", "LinkData file ouput")
-    .argument("<LinkInfo>", "LinkInfo file ouput")
+    .argument("<LinkData>", "LinkData file output")
+    .argument("<LinkInfo>", "LinkInfo file output")
     .action(RebuildCommand);
 
   program
